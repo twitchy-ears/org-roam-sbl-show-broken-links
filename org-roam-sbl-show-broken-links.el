@@ -59,31 +59,40 @@
 (defvar org-roam-sbl-db--check-link-validity-functions
   '(("file" . 'org-roam-sbl--check-file-type-validity)
     ("roam" . 'org-roam-sbl--check-roam-type-validity))
-  "Takes an alist of functions used to check the validity of various types of link by org-roam-sbl-db--check-link-validity-p to extend that easily.  If the function returns t the link is seen as valid, if it returns nil its seen as invalid.
+"Takes an alist of functions used to check the validity of various
+types of link by org-roam-sbl-db--check-link-validity-p to
+extend that easily.  If the function returns t the link is seen
+as valid, if it returns nil its seen as invalid.
 
 For example to mark all file: links as invalid use:
+
 (defun my/filechecker (path) nil)
 (setq org-roam-sbl-db--check-link-validity-functions 
   '((\"file\" . 'my/filechecker)))")
 
 (defun org-roam-sbl-db--valid-title (checktitle)
-  "Returns either a string which should match the input or nil if it can't find it"
+  "Returns either a string which should match the input or nil if it
+can't find it"
   (let ((data (org-roam-db-query `[:select [titles:title] :from titles :where (= title ,(format "%s" checktitle))])))
     (if data
         (caar data)
       nil)))
 
 (defun org-roam-sbl-db--get-file-from-title (checktitle)
-  "Returns a string of the filename associated with that title or nil if it can't be found"
+  "Returns a string of the filename associated with that title or nil
+if it can't be found"
   (let ((data (org-roam-db-query `[:select [file] :from titles :where (= title ,checktitle)])))
     (if data
         (caar data)
       nil)))
 
 (defun org-roam-sbl-conceptually-blank-file-p (filename)
-  "Takes a filename and returns a t if this file contains nothing by header lines (^#) followed by lines that are either whitespace or empty. Returns nil if it finds a line with something which isn't a space.
+  "Takes a filename and returns a t if this file contains nothing by
+header lines (^#) followed by lines that are either whitespace or
+empty. Returns nil if it finds a line with something which isn't a
+space.
 
-Also returns t on non-existant files because they are very empty"
+Also returns t on non-existant files because they are very empty."
   (let* ((canonpath (expand-file-name filename)))
     (if (file-exists-p canonpath)
         (with-temp-buffer
@@ -100,13 +109,16 @@ Also returns t on non-existant files because they are very empty"
       t))) ;; File doesn't exist so very empty?
 
 (defun org-roam-sbl--check-file-type-validity (link)
-  "Takes a filename, checks it exists and that it has some content, returns true in this case, otherwise nil"
+  "Takes a filename, checks it exists and that it has some content,
+returns true in this case, otherwise nil"
   (if (and (file-exists-p (expand-file-name link))
            (not (org-roam-sbl-conceptually-blank-file-p link)))
       t))
 
 (defun org-roam-sbl--check-roam-type-validity (link)
-  "Takes a node title, checks it exists in the DB, directs back to a file that exists, and that it has some content, returns true in this case, otherwise nil"
+  "Takes a node title, checks it exists in the DB, directs back to a
+file that exists, and that it has some content, returns true in this
+case, otherwise nil"
   (let ((maybetitle (org-roam-sbl-db--valid-title link)))
     (if (and maybetitle
              (not (org-roam-sbl-conceptually-blank-file-p
@@ -114,13 +126,24 @@ Also returns t on non-existant files because they are very empty"
         t)))
   
 (defun org-roam-sbl-db--check-link-validity-p (link type)
-  "Takes a link and a type then attempts to work out if its valid or not, only works for roam: and file: types in the default configuration, returns t for every other type because its not in a position to understand them.
+  "Takes a link and a type then attempts to work out if its valid or
+not, only works for roam: and file: types in the default
+configuration, returns t for every other type because its not in a
+position to understand them.
 
-Default configuration calls functions that use org-roam-conceptually-blank-file-p to check to see if a link has been inserted immediately but has no content (i.e. is just ^# headers and whitespace.
+Default configuration calls functions that use
+org-roam-conceptually-blank-file-p to check to see if a link has been
+inserted immediately but has no content (i.e. is just ^# headers and
+whitespace.
 
-Honestly this feels like something there is a function for already that I'm missing, I had a scan through org-roam.el but I'll probably find it later.  Probably the most flexible way is to call org-open-at-point in a funky way and seeing if that can understand the link in question but I've not looked at that yet.
+Honestly this feels like something there is a function for already
+that I'm missing, I had a scan through org-roam.el but I'll probably
+find it later.  Probably the most flexible way is to call
+org-open-at-point in a funky way and seeing if that can understand the
+link in question but I've not looked at that yet.
 
-The functions that are run can be customised by setting the org-roam-sbl-db--check-link-validity-functions variable."
+The functions that are run can be customised by setting the
+org-roam-sbl-db--check-link-validity-functions variable."
   (let ((func (elt
                (assoc type org-roam-sbl-db--check-link-validity-functions)
                2)))
@@ -135,12 +158,17 @@ The functions that are run can be customised by setting the org-roam-sbl-db--che
       t)))
 
 (defun org-roam-sbl-show-all-broken-links ()
-  "Wrapper function for easy binding, runs (org-roam-show-broken-links t) so it scans everything not just the current buffer"
+  "Wrapper function for easy binding, runs:
+(org-roam-show-broken-links t) 
+so it scans everything not just the current buffer"
   (interactive)
   (org-roam-sbl-show-broken-links t))
 
 (defun org-roam-sbl-show-broken-links (&optional all)
-  "Uses org-roam-sbl-scan-for-broken-links to find/check links.  This function takes the data from that and displays a buffer of each node and the missing links therein as [[file:filename.org]] or [[roam:title]] respectively so that they can be located easily."
+  "Uses org-roam-sbl-scan-for-broken-links to find/check links.  This
+function takes the data from that and displays a buffer of each node
+and the missing links therein as [[type:link]] for example
+[[file:foo.org]] so they can be located and fixed easily."
   (interactive)
   (let* ((data (org-roam-sbl-scan-for-broken-links all))
          (keys)
@@ -173,17 +201,26 @@ The functions that are run can be customised by setting the org-roam-sbl-db--che
       (display-buffer buffername '(display-buffer-at-bottom . nil)))))
 
 (defun org-roam-sbl-scan-for-broken-links (&optional all)
-  "Looks through nodes for links of type 'roam' and 'file' and returns a list of those links that don't appear to actually work.  The list is in the form: ((from-node link-target link-type) (from-node link-target link-type) ...)
+  "Looks through nodes for links of type 'roam' and 'file' and returns
+a list of those links that don't appear to actually work.  The list
+is in the form: 
 
-link-target filenames will attempt to be normalised to absolute paths if they start with a . to avoid relative links from a node making no sense to anything using this data.
+((from-node link-target link-type) (from-node link-target link-type) ...)
 
-Will scan the current buffer using (org-roam--extract-links) unless the all argument is true in which case it will scan the database.  Should probably try and use (org-roam-unlinked-references) or the logic therein but this seems to mostly work."
+link-target filenames will attempt to be normalised to absolute paths
+if they start with a . to avoid relative links from a node making no
+sense to anything using this data.
+
+Will scan the current buffer using (org-roam--extract-links) unless
+the all argument is true in which case it will scan the database.
+Should probably try and use (org-roam-unlinked-references) or the
+logic therein but this seems to mostly work."
   (let* ((rows (if all
-
+                   
                    ;; Extract everything from the database
                    (org-roam-db-query [:select [from to type]
                                                :from links])
-
+                 
                  ;; Otherwise just pull from the current buffer.
                  (org-roam--extract-links)))
          
