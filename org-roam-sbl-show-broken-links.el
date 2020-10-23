@@ -53,6 +53,8 @@
 ;; they've been immediately inserted - those are also counted as
 ;; broken because they don't contain any data yet beyond meta-data.
 
+(require 'cl)
+
 (defvar org-roam-sbl-buffername "*org-roam-show-broken-links*"
   "Buffer where output will go, will be overwritten regularly")
 
@@ -180,7 +182,7 @@ and the missing links therein as [[type:link]] for example
         (erase-buffer)
         (dolist (dat data keys)
           (add-to-list 'keys (car dat)))
-        (dolist (key (sort keys 'equalp))
+        (dolist (key (sort keys 'cl-equalp))
           (let ((title (org-roam-db--get-titles key)))
             (progn
               (insert (format "Node: [[%s][%s]]\n" key title))
@@ -191,7 +193,7 @@ and the missing links therein as [[type:link]] for example
               ;; and building a hash of hashes of broken links but I'm
               ;; not.
               (dolist (dat data)
-                (if (equalp (car dat) key)
+                (if (cl-equalp (car dat) key)
                     (insert (format "[[%s:%s]]\n"
                                     (elt dat 2)
                                     (elt dat 1)))))
@@ -237,7 +239,7 @@ logic therein but this seems to mostly work."
         ;; Check the cache first, if it exists and is 'broken then add
         ;; early
         (if (and cached-linkdata
-                 (equalp cached-linkdata 'valid))
+                 (cl-equalp cached-linkdata 'valid))
 
             (progn
               ;; (message "From cache %s:%s is valid ignoring" linktype tolink)
@@ -255,7 +257,7 @@ logic therein but this seems to mostly work."
           ;;
           ;; FIXME: fixed-path shows up as void?  Probably because we
           ;; try to expand-file-name on invalid files, check this.
-          (let ((fixed-path (if (and (equalp linktype "file")
+          (let ((fixed-path (if (and (cl-equalp linktype "file")
                                      (string-match "^\\." tolink))
                                 (expand-file-name tolink (file-name-directory fromlink))
                               tolink)))
@@ -264,7 +266,7 @@ logic therein but this seems to mostly work."
             ;; If its cached as bad then add it to the list as a bad
             ;; link for this source-node
             (if  (and cached-linkdata
-                      (equalp cached-linkdata 'invalid))
+                      (cl-equalp cached-linkdata 'invalid))
 
                 (progn
                   ;; (message "From cache adding to missing %s" (list fromlink fixed-path linktype))
