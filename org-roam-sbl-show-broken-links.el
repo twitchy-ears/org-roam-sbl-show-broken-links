@@ -3,7 +3,7 @@
 ;; Copyright 2020 - Twitchy Ears
 
 ;; Author: Twitchy Ears https://github.com/twitchy-ears/
-;; URL: https://github.com/twitchy-ears/
+;; URL: https://github.com/twitchy-ears/org-roam-sbl-show-broken-links
 ;; Version: 0.1
 ;; Package-Requires ((emacs "25") (org-roam "1.2.1"))
 ;; Keywords: org-roam
