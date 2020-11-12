@@ -220,8 +220,16 @@ logic therein but this seems to mostly work."
   (let* ((rows (if all
                    
                    ;; Extract everything from the database
-                   (org-roam-db-query [:select [from to type]
-                                               :from links])
+                   (cond ((>= org-roam-db--version 10)
+                          (org-roam-db-query [:select [source dest type]
+                                                      :from links]))
+                         ((= org-roam-db--version 9)
+                          (org-roam-db-query [:select [from to type]
+                                                      :from links]))
+                         (t
+                          (org-roam-db-query [:select [from to type]
+                                                      :from links])))
+
                  
                  ;; Otherwise just pull from the current buffer.
                  (org-roam--extract-links)))
@@ -235,6 +243,7 @@ logic therein but this seems to mostly work."
              (linktype (elt row 2))
              (cached-linkdata (gethash (format "%s:%s" linktype tolink) cache)))
         ;; (message "Starting run, cache: %s" cache)
+        ;; (message "Starting run, fromlink: '%s', tolink: '%s', linktype: '%s'" fromlink tolink linktype)
              
         ;; Check the cache first, if it exists and is 'broken then add
         ;; early
