@@ -96,7 +96,7 @@ space.
 
 Also returns t on non-existant files because they are very empty."
   (let* ((canonpath (expand-file-name filename)))
-    (if (and (file-exists-p canonpath)
+    (if (and (file-readable-p canonpath)
              (not (file-directory-p canonpath)))
         (with-temp-buffer
           (insert-file-contents-literally canonpath)
