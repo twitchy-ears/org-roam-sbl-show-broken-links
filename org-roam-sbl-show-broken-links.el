@@ -53,7 +53,10 @@
 ;; they've been immediately inserted - those are also counted as
 ;; broken because they don't contain any data yet beyond meta-data.
 
-(require 'cl)
+(eval-and-compile
+  (require 'org-roam)
+  (require 'org-roam-db)
+  (with-no-warnings (require 'cl)))
 
 (defvar org-roam-sbl-buffername "*org-roam-show-broken-links*"
   "Buffer where output will go, will be overwritten regularly")
@@ -175,7 +178,17 @@ and the missing links therein as [[type:link]] for example
   (interactive)
   (let* ((data (org-roam-sbl-scan-for-broken-links all))
          (keys)
-         (buffername org-roam-sbl-buffername))
+         (buffername org-roam-sbl-buffername)
+         
+         ;; Version 1.2.3 changed the name of the function to get the
+         ;; title of a node by removing the s from the end.
+         ;;
+         ;; Should maybe check (org-roam-version) or calculate this
+         ;; once upon load?
+         (titlefunc (if (fboundp 'org-roam-db--get-title)
+                        'org-roam-db--get-title   ;; version >= 1.2.3
+                      'org-roam-db--get-titles))) ;; version 1.2.1 - 1.2.2
+
     ;; (message "Debug data '%s'" data)
     (save-current-buffer
       (get-buffer-create buffername)
@@ -184,7 +197,7 @@ and the missing links therein as [[type:link]] for example
         (dolist (dat data keys)
           (add-to-list 'keys (car dat)))
         (dolist (key (sort keys 'cl-equalp))
-          (let ((title (org-roam-db--get-titles key)))
+          (let ((title (funcall titlefunc key)))
             (progn
               (insert (format "Node: [[%s][%s]]\n" key title))
 
